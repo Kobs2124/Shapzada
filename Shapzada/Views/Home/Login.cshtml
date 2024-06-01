@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="~/Content/Login.css" rel="stylesheet" />
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Shapzada</h2>
+        <form class="login-form" action="@Url.Action("Login", "Home")" method="POST">
+            <input type="text" name="Email" placeholder="Email or Mobile Number" required>
+            <input type="password" name="Password" placeholder="Password" required>
+            <input type="submit" value="Login">
+        </form>
+        <div class="signup-link">
+            <a href="">New to Shopzada? Sign Up Now!</a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+﻿@model Shapzada.Models.User
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="~/Content/Adduser.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="adduser-container">
+        <h2>Add User</h2>
+        <form id="addUserForm" action="@Url.Action("AddUserProcess", "Home")" method="post">
+            <div>
+                <label for="Email">Email:</label>
+                @Html.TextBoxFor(m => m.Email, new { @id = "Email", type = "email", required = "required" })
+            </div>
+            <div>
+                <label for="Password">Password:</label>
+                @Html.PasswordFor(m => m.Password, new { @id = "Password", required = "required" })
+            </div>
+            <button type="button" id="addUserButton">Add User</button>
+        </form>
+
+        <div id="result"></div>
+    </div>
+
+    @section Scripts {
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                $('#addUserButton').on('click', function () {
+                    $.ajax({
+                        type: 'POST',
+                        url: $('#addUserForm').attr('action'),
+                        data: $('#addUserForm').serialize(),
+                        success: function (response) {
+                            if (response.success) {
+                                $('#result').html('<p>User added successfully! User ID: ' + response.userId + '</p>');
+                            } else {
+                                $('#result').html('<p>' + response.message + '</p>');
+                            }
+                        },
+                        error: function () {
+                            $('#result').html('<p>Error adding user.</p>');
+                        }
+                    });
+                });
+            });
+        </script>
+    }
+</body>
+</html>
