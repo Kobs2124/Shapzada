@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -102,6 +103,14 @@ namespace Shapzada.Controllers
         [HttpPost]
         public ActionResult AddToCart(int productId)
         {
+            // Check if the user is logged in
+            if (Session["UserId"] == null)
+            {
+                // User is not logged in, redirect to the Login page
+                return RedirectToAction("Login");
+            }
+
+            // User is logged in, proceed with adding the product to the cart
             Product product = GetProductById(productId);
 
             if (product != null && product.Quantity > 0)
@@ -237,8 +246,266 @@ namespace Shapzada.Controllers
             return View();
         }
 
+        [HttpPost]
+        public ActionResult Createproduct(Product product, HttpPostedFileBase img)
+        {
+            if (ModelState.IsValid)
+            {
+                if (img != null && img.ContentLength > 0)
+                {
+                    string imageName = Path.GetFileName(img.FileName);
+                    string logpath = Server.MapPath("~/Uploads");
+
+                    if (!Directory.Exists(logpath))
+                    {
+                        Directory.CreateDirectory(logpath);
+                    }
+
+                    string filepath = Path.Combine(logpath, imageName);
+                    img.SaveAs(filepath);
+                    product.Image = imageName;
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Please upload a valid image file.");
+                    return View(product);
+                }
+
+                using (var db = new SqlConnection(connStr))
+                {
+                    db.Open();
+                    using (var cmd = db.CreateCommand())
+                    {
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "INSERT INTO PRODUCT (Name, Price, Brand, Quantity, Description, Image)"
+                                        + "VALUES (@Name, @Price, @Brand, @Quantity, @Description, @Image)";
+
+                        cmd.Parameters.AddWithValue("@Name", product.Name);
+                        cmd.Parameters.AddWithValue("@Price", product.Price);
+                        cmd.Parameters.AddWithValue("@Brand", product.Brand);
+                        cmd.Parameters.AddWithValue("@Quantity", product.Quantity);
+                        cmd.Parameters.AddWithValue("@Description", product.Description);
+                        cmd.Parameters.AddWithValue("@Image", product.Image);
+
+                        var ctr = cmd.ExecuteNonQuery();
+                        if (ctr > 0)
+                        {
+                            return RedirectToAction("Allproduct");
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("", "An error occurred while saving the product.");
+                        }
+                    }
+                }
+            }
+
+            return View(product);
+        }
+
+
+
+        public ActionResult Admin()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public JsonResult CreateAdminProcess(string admin_email, string admin_pass)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(admin_email) || string.IsNullOrEmpty(admin_pass))
+                {
+                    throw new ArgumentException("Email and Password cannot be empty.");
+                }
+
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    string query = "INSERT INTO Admin (Admin_email, Admin_pass) VALUES (@admin_email, @admin_pass)";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@admin_email", admin_email);
+                    cmd.Parameters.AddWithValue("@admin_pass", admin_pass);
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        return Json(new { success = true, message = "Admin created successfully." });
+                    }
+                    else
+                    {
+                        throw new Exception("No rows were inserted into the database.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception using a logging framework
+                // For simplicity, just returning the error message for now
+                return Json(new { success = false, message = "An error occurred: " + ex.Message });
+            }
+        }
+
+        public ActionResult produpdate(int id)
+        {
+            Product product = null;
+
+            using (var db = new SqlConnection(connStr))
+            {
+                db.Open();
+                using (var cmd = db.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = "SELECT * FROM PRODUCT WHERE Id = @Id";
+                    cmd.Parameters.AddWithValue("@Id", id);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            product = new Product
+                            {
+                                Id = (int)reader["Id"],
+                                Name = reader["Name"].ToString(),
+                                Price = (int)reader["Price"],
+                                Brand = reader["Brand"].ToString(),
+                                Quantity = (int)reader["Quantity"],
+                                Description = reader["Description"].ToString(),
+                                Image = reader["Image"].ToString()
+                            };
+                        }
+                    }
+                }
+            }
+
+            if (product == null)
+            {
+                return HttpNotFound();
+            }
+
+            return View(product);
+        }
+
+        // This action method is for handling the form submission and updating the product.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult produpdate(Product product)
+        {
+            if (ModelState.IsValid)
+            {
+                using (var db = new SqlConnection(connStr))
+                {
+                    db.Open();
+                    using (var cmd = db.CreateCommand())
+                    {
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = "UPDATE PRODUCT SET Name = @Name, Price = @Price, Brand = @Brand, Quantity = @Quantity, Description = @Description, Image = @Image WHERE Id = @Id";
+
+                        cmd.Parameters.AddWithValue("@Name", product.Name);
+                        cmd.Parameters.AddWithValue("@Price", product.Price);
+                        cmd.Parameters.AddWithValue("@Brand", product.Brand);
+                        cmd.Parameters.AddWithValue("@Quantity", product.Quantity);
+                        cmd.Parameters.AddWithValue("@Description", product.Description);
+                        cmd.Parameters.AddWithValue("@Image", product.Image);
+                        cmd.Parameters.AddWithValue("@Id", product.Id);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return RedirectToAction("Allproduct");
+            }
+
+            return View(product);
+        }
+
+        public ActionResult Search(string searchTerm)
+        {
+            var products = GetProductsFromDatabase();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                // Filter products by name or brand containing the search term
+                products = products.Where(p => p.Name.ToLower().Contains(searchTerm.ToLower()) || p.Brand.ToLower().Contains(searchTerm.ToLower())).ToList();
+            }
+
+            if (products.Any())
+            {
+                return View("Allproduct", products);
+            }
+            else
+            {
+                ViewBag.Message = "No products exist.";
+                return View("Allproduct", Enumerable.Empty<Shapzada.Models.Product>());
+            }
+        }
+
+        public ActionResult DeleteProduct(int id)
+        {
+            using (var db = new SqlConnection(connStr))
+            {
+                db.Open();
+                using (var cmd = db.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = "DELETE FROM PRODUCT WHERE Id = @Id";
+                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            return RedirectToAction("Allproduct");
+        }
+
+        public ActionResult Userview()
+        {
+            List<Product> products = new List<Product>();
+
+            using (var db = new SqlConnection(connStr))
+            {
+                db.Open();
+                using (var cmd = db.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.Text;
+                    // Update the SQL query to fetch only the necessary fields
+                    cmd.CommandText = "SELECT Id, Name, Price, Brand, Quantity, Description, Image FROM PRODUCT";
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Product product = new Product
+                            {
+                                Id = (int)reader["Id"],
+                                Name = reader["Name"].ToString(),
+                                Price = (int)(decimal)reader["Price"],
+                                Brand = reader["Brand"].ToString(),
+                                Quantity = (int)reader["Quantity"],
+                                Description = reader["Description"].ToString(),
+                                Image = reader["Image"].ToString()
+                            };
+                            products.Add(product);
+                        }
+                    }
+                }
+            }
+
+            return View(products);
+        }
+
 
 
 
     }
 }
+
+
+
+
+
+
+
+    
+

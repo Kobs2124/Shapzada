@@ -1,111 +1,52 @@
-﻿<!DOCTYPE html>
+﻿@model IEnumerable<Shapzada.Models.Product>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
     <link href="~/Content/Allproduct.css" rel="stylesheet" />
+    
 </head>
 <body>
-
     <div class="container">
-        <h2>Product List</h2>
-        <div class="product-grid">
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/AIRCON.jpg" alt="Product 1">
-                </div>
-                <div class="product-title">Product 1</div>
-                <div class="product-price">$10.00</div>
-                <div class="product-quantity">Quantity: 50</div>
-                <div class="product-description">This is a high-quality air conditioner.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/BELNDER.jpg" alt="Product 2">
-                </div>
-                <div class="product-title">Product 2</div>
-                <div class="product-price">$15.00</div>
-                <div class="product-quantity">Quantity: 30</div>
-                <div class="product-description">A versatile blender for your kitchen.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/COFFEE.jpg" alt="Product 3">
-                </div>
-                <div class="product-title">Product 3</div>
-                <div class="product-price">$20.00</div>
-                <div class="product-quantity">Quantity: 40</div>
-                <div class="product-description">Make your mornings better with this coffee maker.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/ELECTRICFAN.jpg" alt="Product 4">
-                </div>
-                <div class="product-title">Product 4</div>
-                <div class="product-price">$25.00</div>
-                <div class="product-quantity">Quantity: 20</div>
-                <div class="product-description">A powerful electric fan for cooling.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/LAPTOP.jpg" alt="Product 5">
-                </div>
-                <div class="product-title">Product 5</div>
-                <div class="product-price">$30.00</div>
-                <div class="product-quantity">Quantity: 15</div>
-                <div class="product-description">A reliable laptop for your daily needs.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/OVEN.jpg" alt="Product 6">
-                </div>
-                <div class="product-title">Product 6</div>
-                <div class="product-price">$35.00</div>
-                <div class="product-quantity">Quantity: 10</div>
-                <div class="product-description">Bake your favorite dishes with this oven.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/REFRIGERATOR.jpg" alt="Product 7">
-                </div>
-                <div class="product-title">Product 7</div>
-                <div class="product-price">$40.00</div>
-                <div class="product-quantity">Quantity: 8</div>
-                <div class="product-description">Keep your food fresh with this refrigerator.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/REFRIGERATOR.jpg" alt="Product 8">
-                </div>
-                <div class="product-title">Product 8</div>
-                <div class="product-price">$45.00</div>
-                <div class="product-quantity">Quantity: 5</div>
-                <div class="product-description">A compact refrigerator for small spaces.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="~/Content/PICS/RICECOOKER.jpg" alt="Product 9">
-                </div>
-                <div class="product-title">Product 9</div>
-                <div class="product-price">$50.00</div>
-                <div class="product-quantity">Quantity: 12</div>
-                <div class="product-description">Cook perfect rice every time with this rice cooker.</div>
-                <button class="add-to-cart-button">Add to Cart</button>
-            </div>
+        <h2>Shapzada!</h2>
 
-        </div>
+        <!-- Search Form -->
+        @using (Html.BeginForm("Search", "Home", FormMethod.Get))
+        {
+<div class="form-group">
+    <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Brand" />
+    <button type="submit" class="btn btn-primary">Search</button>
+</div>}
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message))
+        {
+<p>@ViewBag.Message</p> }
+            else
+            {
+<div class="product-grid">
+    @foreach (var product in Model)
+    {
+<div class="product-card">
+    <div class="product-image">
+        <img src="@Url.Content("~/Uploads/" + product.Image)" alt="@product.Name">
+    </div>
+    <div class="product-title">@product.Name</div>
+    <div class="product-price">$@product.Price</div>
+    <div class="product-quantity"><strong>Quantity:</strong> @product.Quantity</div>
+    <div class="product-description">@product.Description</div>
+    <div class="button-container">
+        <a href="@Url.Action("produpdate", "Home", new { id = product.Id })" class="btn btn-primary">Edit</a>
+        <a href="@Url.Action("DeleteProduct", "Home", new { id = product.Id })"
+           class="btn btn-danger"
+           onclick="return confirm('Are you sure you want to delete this product?')">Delete</a>
+    </div>
+</div>                }
+</div>}
     </div>
 
+    <script src="~/Scripts/jquery-3.4.1.min.js"></script>
 </body>
 </html>
-<script src="~/Scripts/jquery-3.4.1.min.js"></script>
-<script src="~/Scripts/JS/allproduct.js"></script>

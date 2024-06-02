@@ -10,6 +10,10 @@
 
     <div class="login-container">
         <h2>Shapzada</h2>
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="error-message">@ViewBag.ErrorMessage</div>
+        }
         <form class="login-form" action="@Url.Action("Login", "Home")" method="POST">
             <input type="text" name="Email" placeholder="Email or Mobile Number" required>
             <input type="password" name="Password" placeholder="Password" required>

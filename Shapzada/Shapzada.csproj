@@ -140,6 +140,7 @@
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\cartlogo.css" />
+    <Content Include="Content\createproduct.css" />
     <Content Include="Content\Login.css" />
     <Content Include="Content\PICS\AIRCON.jpg" />
     <Content Include="Content\PICS\BELNDER.jpg" />
@@ -171,8 +172,11 @@
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="Scripts\JS\admin.js" />
     <Content Include="Scripts\JS\allproduct.js" />
+    <Content Include="Scripts\JS\createprod.js" />
     <Content Include="Scripts\JS\JavaScript1.js" />
+    <Content Include="Scripts\JS\searchprod.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -193,7 +197,10 @@
     <Content Include="Views\Home\Addcart.cshtml" />
     <Content Include="Views\Home\cartlogo.cshtml" />
     <Content Include="Views\Home\Adduser.cshtml" />
+    <Content Include="Views\Home\Admin.cshtml" />
     <Content Include="Views\Home\Createproduct.cshtml" />
+    <Content Include="Views\Home\produpdate.cshtml" />
+    <Content Include="Views\Home\Userview.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
