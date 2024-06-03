@@ -1,7 +1,53 @@
-﻿
-@{
-    ViewBag.Title = "Userview";
-}
+﻿@model IEnumerable<Shapzada.Models.Product>
 
-<h2>Userview</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shapzada!</title>
+    <link href="~/Content/userview.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <h2>Shapzada!</h2>
 
+        <!-- Search Form -->
+        @using (Html.BeginForm("Search", "Home", FormMethod.Get))
+        {
+            <div class="form-group">
+                <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Brand" />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message))
+        {
+            <p>@ViewBag.Message</p>
+        }
+        else
+        {
+            <div class="product-grid">
+                @foreach (var product in Model)
+                {
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="@Url.Content("~/Uploads/" + product.Image)" alt="@product.Name">
+                        </div>
+                        <div class="product-title">@product.Name</div>
+                        <div class="product-price">$@product.Price</div>
+                        <div class="product-quantity"><strong>Quantity:</strong> @product.Quantity</div>
+                        <div class="product-description">@product.Description</div>
+                        <!-- Add to Cart Button -->
+                        <div class="button-container">
+                            <button class="add-to-cart">Add to Cart</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <script src="~/Scripts/jquery-3.4.1.min.js"></script>
+</body>
+</html>

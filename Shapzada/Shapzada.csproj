@@ -156,6 +156,7 @@
     <Content Include="Content\PICS\TV.jpg" />
     <Content Include="Content\PICS\VACUUM.jpg" />
     <Content Include="Content\PICS\WASHING.jpg" />
+    <Content Include="Content\userview.css" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />

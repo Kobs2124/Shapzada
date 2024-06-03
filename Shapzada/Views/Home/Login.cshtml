@@ -10,7 +10,7 @@
 
     <div class="login-container">
         <h2>Shapzada</h2>
-        @if (ViewBag.ErrorMessage != null)
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
         {
             <div class="error-message">@ViewBag.ErrorMessage</div>
         }

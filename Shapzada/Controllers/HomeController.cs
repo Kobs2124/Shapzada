@@ -4,6 +4,8 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using Shapzada.Models;
@@ -31,6 +33,10 @@ namespace Shapzada.Controllers
             ViewBag.Message = "Your contact page.";
 
             return View();
+        }
+        private bool IsAdmin()
+        {
+            return Session["IsAdmin"] != null && (bool)Session["IsAdmin"];
         }
 
         public ActionResult Customer()
@@ -61,33 +67,52 @@ namespace Shapzada.Controllers
 
 
         [HttpPost]
-        public ActionResult Login(User user)
+        public ActionResult Login(string email, string password)
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
-                    string query = "SELECT Id FROM [User] WHERE Email = @Email AND Password = @Password";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@Email", user.Email);
-                    cmd.Parameters.AddWithValue("@Password", user.Password);
-
                     conn.Open();
-                    var result = cmd.ExecuteScalar();
 
-                    if (result != null)
+                    // Check if the user is an admin
+                    string adminQuery = "SELECT Id FROM [Admin] WHERE Admin_email = @Email AND Admin_pass = @Password";
+                    SqlCommand adminCmd = new SqlCommand(adminQuery, conn);
+                    adminCmd.Parameters.AddWithValue("@Email", email);
+                    adminCmd.Parameters.AddWithValue("@Password", password); // Note: Replace with hashed password
+
+                    var adminResult = adminCmd.ExecuteScalar();
+
+                    if (adminResult != null)
                     {
-                        // Set session variable to indicate user is logged in
-                        Session["UserId"] = (int)result;
+                        // Set session variable to indicate admin is logged in
+                        Session["IsAdmin"] = true;
+                        Session["UserId"] = (int)adminResult;
 
-                        // Redirect user to the Allproduct page
+                        // Redirect admin to AuthPage
                         return RedirectToAction("Allproduct", "Home");
                     }
-                    else
+
+                    // Check if the user is a regular user
+                    string userQuery = "SELECT Id FROM [User] WHERE Email = @Email AND Password = @Password";
+                    SqlCommand userCmd = new SqlCommand(userQuery, conn);
+                    userCmd.Parameters.AddWithValue("@Email", email);
+                    userCmd.Parameters.AddWithValue("@Password", password); // Note: Replace with hashed password
+
+                    var userResult = userCmd.ExecuteScalar();
+
+                    if (userResult != null)
                     {
-                        ViewBag.ErrorMessage = "Invalid email or password";
-                        return View();
+                        // Set session variable to indicate user is logged in
+                        Session["IsAdmin"] = false;
+                        Session["UserId"] = (int)userResult;
+
+                        // Redirect user to the UserPage
+                        return RedirectToAction("Userview", "Home");
                     }
+
+                    ViewBag.ErrorMessage = "Invalid email or password";
+                    return View();
                 }
             }
             catch (Exception ex)
@@ -96,6 +121,7 @@ namespace Shapzada.Controllers
                 return View();
             }
         }
+
 
 
 
@@ -220,10 +246,13 @@ namespace Shapzada.Controllers
             {
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
+                    // Hash the password
+                    string hashedPassword = HashPassword(user.Password);
+
                     string query = "INSERT INTO [User] (Email, Password) VALUES (@Email, @Password); SELECT SCOPE_IDENTITY()";
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@Email", user.Email);
-                    cmd.Parameters.AddWithValue("@Password", user.Password);
+                    cmd.Parameters.AddWithValue("@Password", hashedPassword);
 
                     conn.Open();
                     int userId = Convert.ToInt32(cmd.ExecuteScalar());
@@ -241,14 +270,25 @@ namespace Shapzada.Controllers
             }
         }
 
+
         public ActionResult Createproduct()
         {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("Index");
+            }
+
             return View();
         }
 
         [HttpPost]
         public ActionResult Createproduct(Product product, HttpPostedFileBase img)
         {
+            if (!IsAdmin())
+            {
+                // Redirect non-admin users to Userview
+                return RedirectToAction("Userview");
+            }
             if (ModelState.IsValid)
             {
                 if (img != null && img.ContentLength > 0)
@@ -320,13 +360,16 @@ namespace Shapzada.Controllers
                     throw new ArgumentException("Email and Password cannot be empty.");
                 }
 
+                // Hash the password
+                string hashedPassword = HashPassword(admin_pass);
+
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
                     string query = "INSERT INTO Admin (Admin_email, Admin_pass) VALUES (@admin_email, @admin_pass)";
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@admin_email", admin_email);
-                    cmd.Parameters.AddWithValue("@admin_pass", admin_pass);
+                    cmd.Parameters.AddWithValue("@admin_pass", hashedPassword);
 
                     int rowsAffected = cmd.ExecuteNonQuery();
 
@@ -342,14 +385,30 @@ namespace Shapzada.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception using a logging framework
-                // For simplicity, just returning the error message for now
                 return Json(new { success = false, message = "An error occurred: " + ex.Message });
             }
         }
 
+        private string HashPassword(string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var bytes = Encoding.UTF8.GetBytes(password);
+                var hash = sha256.ComputeHash(bytes);
+                return Convert.ToBase64String(hash);
+            }
+        }
+
+   
+
+
         public ActionResult produpdate(int id)
         {
+            if (!IsAdmin())
+            {
+                // Redirect non-admin users to Userview
+                return RedirectToAction("Userview");
+            }
             Product product = null;
 
             using (var db = new SqlConnection(connStr))
@@ -393,6 +452,11 @@ namespace Shapzada.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult produpdate(Product product)
         {
+            if (!IsAdmin())
+            {
+                // Redirect non-admin users to Userview
+                return RedirectToAction("Userview");
+            }
             if (ModelState.IsValid)
             {
                 using (var db = new SqlConnection(connStr))
@@ -423,6 +487,8 @@ namespace Shapzada.Controllers
 
         public ActionResult Search(string searchTerm)
         {
+            bool isAdmin = Session["IsAdmin"] != null && (bool)Session["IsAdmin"]; // Check if the user is an admin
+
             var products = GetProductsFromDatabase();
 
             if (!string.IsNullOrEmpty(searchTerm))
@@ -433,67 +499,58 @@ namespace Shapzada.Controllers
 
             if (products.Any())
             {
-                return View("Allproduct", products);
+                if (isAdmin)
+                {
+                    return View("Allproduct", products); // Return admin view
+                }
+                else
+                {
+                    return View("Userview", products); // Return user view
+                }
             }
             else
             {
                 ViewBag.Message = "No products exist.";
-                return View("Allproduct", Enumerable.Empty<Shapzada.Models.Product>());
-            }
-        }
-
-        public ActionResult DeleteProduct(int id)
-        {
-            using (var db = new SqlConnection(connStr))
-            {
-                db.Open();
-                using (var cmd = db.CreateCommand())
+                if (isAdmin)
                 {
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandText = "DELETE FROM PRODUCT WHERE Id = @Id";
-                    cmd.Parameters.AddWithValue("@Id", id);
-                    cmd.ExecuteNonQuery();
+                    return View("Allproduct", Enumerable.Empty<Shapzada.Models.Product>());
+                }
+                else
+                {
+                    return View("Userview", Enumerable.Empty<Shapzada.Models.Product>());
                 }
             }
-
-            return RedirectToAction("Allproduct");
         }
+
+
 
         public ActionResult Userview()
         {
-            List<Product> products = new List<Product>();
-
-            using (var db = new SqlConnection(connStr))
+            try
             {
-                db.Open();
-                using (var cmd = db.CreateCommand())
-                {
-                    cmd.CommandType = CommandType.Text;
-                    // Update the SQL query to fetch only the necessary fields
-                    cmd.CommandText = "SELECT Id, Name, Price, Brand, Quantity, Description, Image FROM PRODUCT";
+                // Fetch products from the database or wherever they are stored
+                var products = GetProductsFromDatabase(); // Replace this with your actual method to fetch products
 
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            Product product = new Product
-                            {
-                                Id = (int)reader["Id"],
-                                Name = reader["Name"].ToString(),
-                                Price = (int)(decimal)reader["Price"],
-                                Brand = reader["Brand"].ToString(),
-                                Quantity = (int)reader["Quantity"],
-                                Description = reader["Description"].ToString(),
-                                Image = reader["Image"].ToString()
-                            };
-                            products.Add(product);
-                        }
-                    }
+                if (products != null && products.Any())
+                {
+                    return View(products);
+                }
+                else
+                {
+                    ViewBag.Message = "No products found.";
                 }
             }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that might occur during data retrieval
+                ViewBag.Message = "Error: " + ex.Message;
+            }
 
-            return View(products);
+            // If no products were found or an error occurred, return the view with an empty model
+            return View(new List<Shapzada.Models.Product>());
         }
+
+
 
 
 
