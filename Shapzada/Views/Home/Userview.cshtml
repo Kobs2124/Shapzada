@@ -9,10 +9,14 @@
     <link href="~/Content/userview.css" rel="stylesheet" />
 </head>
 <body>
+
     <div class="container">
         <h2>Shapzada!</h2>
 
-        <!-- Search Form -->
+        <div class="view-cart">
+            <a href="@Url.Action("Viewcart", "Home")" class="btn btn-success">View Cart</a>
+        </div>
+
         @using (Html.BeginForm("Search", "Home", FormMethod.Get))
         {
             <div class="form-group">
@@ -38,9 +42,9 @@
                         <div class="product-price">$@product.Price</div>
                         <div class="product-quantity"><strong>Quantity:</strong> @product.Quantity</div>
                         <div class="product-description">@product.Description</div>
-                        <!-- Add to Cart Button -->
                         <div class="button-container">
-                            <button class="add-to-cart">Add to Cart</button>
+                            <button class="add-to-cart" data-id="@product.Id">Add to Cart</button>
+                            <input type="number" id="quantity-@product.Id" value="1" min="1" max="@product.Quantity" />
                         </div>
                     </div>
                 }
@@ -49,5 +53,19 @@
     </div>
 
     <script src="~/Scripts/jquery-3.4.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart').click(function() {
+                var productId = $(this).data('id');
+                var quantity = $('#quantity-' + productId).val();
+                var confirmAdd = confirm("Do you want to add " + quantity + " units of this product to your cart?");
+                if (confirmAdd) {
+                    $.post('@Url.Action("Addcart", "Home")', { productId: productId, quantity: quantity }, function(response) {
+                        alert(response.message);
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

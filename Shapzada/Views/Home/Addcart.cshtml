@@ -1,7 +1,39 @@
-﻿
-@{
-    ViewBag.Title = "Addcart";
+﻿@{
+    ViewBag.Title = "Add to Cart";
 }
 
-<h2>Addcart</h2>
+<h2>Add to Cart</h2>
 
+@using (Html.BeginForm("Addcart", "Home", FormMethod.Post, new { id = "addcart-form" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label for="productId">Product ID:</label>
+        <input type="text" class="form-control" id="productId" name="productId" readonly />
+    </div>
+
+    <div class="form-group">
+        <label for="quantity">Quantity:</label>
+        <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add to Cart</button>
+}
+
+<script>
+    $(document).ready(function () {
+        $(".add-to-cart").click(function (event) {
+            event.preventDefault();
+
+            var productId = $(this).data("productid");
+            $("#productId").val(productId);
+
+            var confirmAdd = confirm("Do you want to add this product to your cart?");
+            if (confirmAdd) {
+                $("#addcart-form").submit();
+                alert("Product added to cart successfully!");
+            }
+        });
+    });
+</script>

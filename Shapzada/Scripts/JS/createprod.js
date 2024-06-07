@@ -14,14 +14,26 @@
             $('#priceError').text('Price is required.');
             isValid = false;
         } else {
-            $('#priceError').text('');
+            var price = parseFloat($('#Price').val());
+            if (price < 0) {
+                $('#priceError').text('Price cannot be negative.');
+                isValid = false;
+            } else {
+                $('#priceError').text('');
+            }
         }
 
         if ($('#Quantity').val() === '') {
             $('#quantityError').text('Quantity is required.');
             isValid = false;
         } else {
-            $('#quantityError').text('');
+            var quantity = parseInt($('#Quantity').val());
+            if (quantity < 0) {
+                $('#quantityError').text('Quantity cannot be negative.');
+                isValid = false;
+            } else {
+                $('#quantityError').text('');
+            }
         }
 
         if ($('#Image').get(0).files.length === 0) {
@@ -31,6 +43,27 @@
             $('#imageError').text('');
         }
 
+        if (!isValid) {
+            e.preventDefault(); // Prevent form submission
+        }
+
         return isValid;
+    });
+
+    // Clear error messages on input change
+    $('#Name').on('input', function () {
+        $('#nameError').text('');
+    });
+
+    $('#Price').on('input', function () {
+        $('#priceError').text('');
+    });
+
+    $('#Quantity').on('input', function () {
+        $('#quantityError').text('');
+    });
+
+    $('#Image').on('change', function () {
+        $('#imageError').text('');
     });
 });

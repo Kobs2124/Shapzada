@@ -124,6 +124,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\Cart.cs" />
+    <Compile Include="Models\CartItemViewModel.cs" />
+    <Compile Include="Models\Prodcart.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -195,13 +198,14 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Home\Allproduct.cshtml" />
     <Content Include="Views\Home\Login.cshtml" />
-    <Content Include="Views\Home\Addcart.cshtml" />
     <Content Include="Views\Home\cartlogo.cshtml" />
     <Content Include="Views\Home\Adduser.cshtml" />
     <Content Include="Views\Home\Admin.cshtml" />
     <Content Include="Views\Home\Createproduct.cshtml" />
     <Content Include="Views\Home\produpdate.cshtml" />
     <Content Include="Views\Home\Userview.cshtml" />
+    <Content Include="Views\Home\Addcart.cshtml" />
+    <Content Include="Views\Home\Viewcart.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

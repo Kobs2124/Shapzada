@@ -1,0 +1,76 @@
+﻿@model List<Shapzada.Models.CartItemViewModel>
+
+@{
+    ViewBag.Title = "Viewcart";
+}
+
+<h2>Viewcart</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Total</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ProductName</td>
+                <td>@item.ProductPrice</td>
+                <td>@item.Quantity</td>
+                <td>@item.TotalPrice</td>
+                <td>
+                    <form id="checkoutForm_@item.ProductId" method="post">
+                        <input type="hidden" name="productId" value="@item.ProductId" />
+                        <button type="button" onclick="checkout(@item.ProductId)" class="btn btn-primary">Checkout</button>
+                    </form>
+                    <form action="@Url.Action("Cancel", "Home")" method="post" onsubmit="return confirm('Are you sure you want to cancel this item?');">
+                        <input type="hidden" name="productId" value="@item.ProductId" />
+                        <button type="submit" class="btn btn-danger">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section scripts {
+    <script>
+        function checkout(productId) {
+            var formData = $('#checkoutForm_' + productId).serialize();
+            $.post('@Url.Action("Checkout", "Home")', formData)
+                .done(function (data) {
+                    alert(data.message);
+                    if (data.success) {
+                        window.location.href = '@Url.Action("Userview", "Home")';
+                    }
+                })
+                .fail(function () {
+                    alert('An error occurred while processing your request.');
+                });
+        }
+
+       function confirmCancel(productId) {
+            if (confirm('Are you sure you want to cancel the order?')) {
+                var formData = $('#cancelForm_' + productId).serialize();
+                $.post('@Url.Action("Cancel", "Home")', formData)
+                    .done(function (data) {
+                        if (data.success) {
+                            $('#product-row-' + productId).remove();
+                            alert('Product cancelled successfully.');
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .fail(function () {
+                        alert('An error occurred while processing your request.');
+                    });
+            }
+        }
+    </script>
+}
